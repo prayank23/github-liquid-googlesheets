@@ -9,7 +9,7 @@ from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
 
 #check elements.conf file
 rpc_port =
-rpc_user = 
+rpc_user =
 rpc_password =
 
 scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
@@ -24,23 +24,21 @@ index = len(all) + 1
 
 app = Flask(__name__)
 
-@app.route('/github', methods=['POST'])
-def api():
+@app.route('/tweet', methods=['POST'])
+def tweets():
 
     if request.headers['Content-Type'] == 'application/json' and request.headers['X-GitHub-Event'] == 'pull_request':
         data=request.json
         j = json.loads(json.dumps(data))
         if j['action']== "closed" and j['pull_request']['merged']== True:
-            try:
-                txid = liquid(j['pull_request']['body'])
-                row = [(j['number']),"merged",j['pull_request']['body'],txid]
-                sheet.insert_row(row, index)
+            txid = liquid(j['pull_request']['body'])
+            row = [j['number'],"merged",j['pull_request']['body'],txid]
+            sheet.insert_row(row, index)
+        else:
+            row = [j['number'],j['action'],j['pull_request']['body'],"NA"]
+            sheet.insert_row(row, index)
 
-                result="success"
-            except:
-                result="faiure"
-
-        return result
+        return request.args
 
 def liquid(address):
     try:
@@ -53,6 +51,6 @@ def liquid(address):
     except Exception as general_exception:
         return("An Exception occured: " + str(general_exception))
     return txid
-    
+
 if  __name__ == '__main__':
     app.run(debug=True)
